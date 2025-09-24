@@ -1,0 +1,185 @@
+.api-test {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+.api-test h2 {
+  color: #333;
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.api-test__info {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 30px;
+}
+
+.api-test__info h3 {
+  color: #495057;
+  margin-bottom: 15px;
+  border-bottom: 2px solid #007bff;
+  padding-bottom: 5px;
+}
+
+.api-test__info p {
+  margin: 8px 0;
+  color: #6c757d;
+}
+
+.api-test__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 30px;
+  justify-content: center;
+}
+
+.api-test__button {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  min-width: 150px;
+}
+
+.api-test__button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.api-test__button--primary {
+  background: #007bff;
+  color: white;
+}
+
+.api-test__button--primary:hover:not(:disabled) {
+  background: #0056b3;
+  transform: translateY(-1px);
+}
+
+.api-test__button--secondary {
+  background: #6c757d;
+  color: white;
+}
+
+.api-test__button--secondary:hover:not(:disabled) {
+  background: #545b62;
+  transform: translateY(-1px);
+}
+
+.api-test__button--success {
+  background: #28a745;
+  color: white;
+}
+
+.api-test__button--success:hover:not(:disabled) {
+  background: #1e7e34;
+  transform: translateY(-1px);
+}
+
+.api-test__button--danger {
+  background: #dc3545;
+  color: white;
+}
+
+.api-test__button--danger:hover:not(:disabled) {
+  background: #c82333;
+  transform: translateY(-1px);
+}
+
+.api-test__button--warning {
+  background: #ffc107;
+  color: #212529;
+}
+
+.api-test__button--warning:hover:not(:disabled) {
+  background: #e0a800;
+  transform: translateY(-1px);
+}
+
+.api-test__results {
+  background: #ffffff;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.api-test__results h3 {
+  color: #495057;
+  margin-bottom: 15px;
+  border-bottom: 2px solid #28a745;
+  padding-bottom: 5px;
+}
+
+.api-test__results-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.api-test__result {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  margin: 5px 0;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.api-test__result--info {
+  background: #d1ecf1;
+  border-left: 4px solid #17a2b8;
+  color: #0c5460;
+}
+
+.api-test__result--success {
+  background: #d4edda;
+  border-left: 4px solid #28a745;
+  color: #155724;
+}
+
+.api-test__result--error {
+  background: #f8d7da;
+  border-left: 4px solid #dc3545;
+  color: #721c24;
+}
+
+.api-test__result--warning {
+  background: #fff3cd;
+  border-left: 4px solid #ffc107;
+  color: #856404;
+}
+
+.api-test__result-time {
+  font-weight: 500;
+  margin-right: 10px;
+  min-width: 80px;
+}
+
+.api-test__result-message {
+  flex: 1;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .api-test {
+    padding: 10px;
+  }
+  
+  .api-test__controls {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .api-test__button {
+    width: 100%;
+    max-width: 300px;
+  }
+}
