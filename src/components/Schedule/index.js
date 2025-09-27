@@ -21,6 +21,7 @@ import {
 } from '../ui';
 import Navigation from '../Navigation';
 import Footer from '../Footer';
+import apiService from '../../service/api';
 import './Schedule.css';
 
 const Schedule = () => {
@@ -42,21 +43,11 @@ const Schedule = () => {
   const fetchSchedule = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:8080/api/v1/admin/week-schedule', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setSchedule(data);
-      } else {
-        console.error('Ошибка загрузки расписания:', response.status);
-      }
+      const data = await apiService.request('/api/v1/admin/week-schedule');
+      setSchedule(data);
     } catch (error) {
       console.error('Ошибка загрузки расписания:', error);
+      showToast('Ошибка загрузки расписания. Проверьте авторизацию.', 'error');
     } finally {
       setLoading(false);
     }

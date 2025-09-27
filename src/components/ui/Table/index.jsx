@@ -212,7 +212,7 @@ export const Table = ({
                     )}
                     {columns.map((column) => {
                       const value = column.dataIndex ? record[column.dataIndex] : null;
-                      const content = column.render ? column.render(value, record, index) : value;
+                      const content = column.render ? column.render(record, index) : value;
 
                       return (
                         <td

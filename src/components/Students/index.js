@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Button, Loading, Modal, Table, Badge, Input } from '../ui';
 import Navigation from '../Navigation';
+import apiService from '../../service/api';
 import './Students.css';
 
 const Students = () => {
@@ -19,39 +20,28 @@ const Students = () => {
     try {
       setLoading(true);
       // Получаем студентов через API уроков (в реальном приложении должен быть отдельный endpoint)
-      const response = await fetch('http://localhost:8080/api/v1/admin/lessons', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-          'Content-Type': 'application/json'
+      const lessons = await apiService.request('/api/v1/admin/lessons');
+      // Извлекаем уникальных студентов из уроков
+      const studentsMap = new Map();
+      lessons.forEach(lesson => {
+        if (lesson.children) {
+          lesson.children.forEach(child => {
+            if (!studentsMap.has(child.id)) {
+              studentsMap.set(child.id, {
+                ...child,
+                lessonsCount: 0,
+                lastLesson: null
+              });
+            }
+            const student = studentsMap.get(child.id);
+            student.lessonsCount++;
+            if (!student.lastLesson || new Date(lesson.date) > new Date(student.lastLesson)) {
+              student.lastLesson = lesson.date;
+            }
+          });
         }
       });
-
-      if (response.ok) {
-        const lessons = await response.json();
-        // Извлекаем уникальных студентов из уроков
-        const studentsMap = new Map();
-        lessons.forEach(lesson => {
-          if (lesson.children) {
-            lesson.children.forEach(child => {
-              if (!studentsMap.has(child.id)) {
-                studentsMap.set(child.id, {
-                  ...child,
-                  lessonsCount: 0,
-                  lastLesson: null
-                });
-              }
-              const student = studentsMap.get(child.id);
-              student.lessonsCount++;
-              if (!student.lastLesson || new Date(lesson.date) > new Date(student.lastLesson)) {
-                student.lastLesson = lesson.date;
-              }
-            });
-          }
-        });
-        setStudents(Array.from(studentsMap.values()));
-      } else {
-        console.error('Ошибка загрузки студентов:', response.status);
-      }
+      setStudents(Array.from(studentsMap.values()));
     } catch (error) {
       console.error('Ошибка загрузки студентов:', error);
     } finally {
@@ -151,8 +141,8 @@ const Students = () => {
             <h1>Управление студентами</h1>
             <p>Добавление, редактирование и просмотр информации о студентах</p>
           </div>
-          <Button onClick={handleCreateStudent} className="create-button">
-            ➕ Добавить студента
+          <Button onClick={handleCreateStudent}>
+            Добавить детей
           </Button>
         </div>
 

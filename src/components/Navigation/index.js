@@ -25,7 +25,7 @@ const Navigation = () => {
     { path: '/schedule', label: 'Расписание', icon: FaCalendarAlt },
     { path: '/students', label: 'Дети', icon: FaUsers },
     { path: '/teachers', label: 'Логопеды', icon: FaChalkboardTeacher },
-    { path: '/api-test', label: 'Тест API', icon: FaCog },
+    { path: '/settings', label: 'Настройки', icon: FaCog },
   ];
 
   const isActive = (path) => location.pathname === path;

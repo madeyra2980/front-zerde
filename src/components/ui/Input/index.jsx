@@ -1,7 +1,7 @@
-import React, { useState, forwardRef } from 'react';
+import React, { useState, forwardRef, useCallback, memo } from 'react';
 import './Input.css';
 
-export const Input = forwardRef(({
+export const Input = memo(forwardRef(({
   type = 'text',
   placeholder,
   value,
@@ -30,19 +30,19 @@ export const Input = forwardRef(({
   const [isFocused, setIsFocused] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleFocus = (e) => {
+  const handleFocus = useCallback((e) => {
     setIsFocused(true);
     onFocus?.(e);
-  };
+  }, [onFocus]);
 
-  const handleBlur = (e) => {
+  const handleBlur = useCallback((e) => {
     setIsFocused(false);
     onBlur?.(e);
-  };
+  }, [onBlur]);
 
-  const togglePasswordVisibility = () => {
+  const togglePasswordVisibility = useCallback(() => {
     setShowPassword(!showPassword);
-  };
+  }, [showPassword]);
 
   const inputType = type === 'password' && showPassword ? 'text' : type;
 
@@ -161,6 +161,6 @@ export const Input = forwardRef(({
       )}
     </div>
   );
-});
+}));
 
 Input.displayName = 'Input';

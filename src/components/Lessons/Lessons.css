@@ -18,6 +18,12 @@
   gap: 20px;
 }
 
+.lessons-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .lessons-title h1 {
   color: #333;
   margin: 0 0 5px 0;
@@ -104,16 +110,85 @@
 
 /* Модальные окна */
 .create-lesson-form {
-  padding: 20px 0;
+  padding: 0;
+  min-width: 500px;
+  max-width: 700px;
+  width: 100%;
+}
+
+.lesson-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.lesson-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lesson-form-field.full-width {
+  grid-column: 1 / -1;
+}
+
+.lesson-form-section {
+  grid-column: 1 / -1;
+  margin: 20px 0 10px 0;
+  padding: 15px 0;
+  border-top: 2px solid #e9ecef;
+}
+
+.lesson-form-section h3 {
+  color: #495057;
+  margin: 0 0 15px 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.lesson-form-field label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.lesson-form-field label .required {
+  color: var(--error);
+  margin-left: 4px;
+}
+
+.lesson-form-field .input-wrapper,
+.lesson-form-field select {
+  width: 100%;
+}
+
+.lesson-form-field select {
+  padding: 12px 16px;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  background: var(--surface);
+  color: var(--text-primary);
+}
+
+.lesson-form-field select:focus {
+  border-color: var(--primary);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--primary-100);
 }
 
 .modal-actions {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  margin-top: 25px;
+  margin-top: 32px;
   padding-top: 20px;
-  border-top: 1px solid #e9ecef;
+  border-top: 1px solid var(--border);
 }
 
 .lesson-details {
@@ -194,6 +269,16 @@
 
   .modal-actions {
     flex-direction: column;
+  }
+  
+  .create-lesson-form {
+    min-width: 300px;
+    max-width: 100%;
+  }
+  
+  .lesson-form-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
   }
 
   .detail-row {

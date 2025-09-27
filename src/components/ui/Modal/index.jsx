@@ -23,11 +23,6 @@ export const Modal = ({
       // Store the currently focused element
       previousActiveElement.current = document.activeElement;
       
-      // Focus the modal
-      if (modalRef.current) {
-        modalRef.current.focus();
-      }
-      
       // Prevent body scroll
       document.body.style.overflow = 'hidden';
       
@@ -99,7 +94,6 @@ export const Modal = ({
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? 'modal-title' : undefined}
-        tabIndex={-1}
       >
         <div className={contentClasses}>
           {(title || showCloseButton) && (

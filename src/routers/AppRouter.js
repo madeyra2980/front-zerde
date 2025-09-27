@@ -14,7 +14,7 @@ import Lessons from '../components/Lessons';
 import Schedule from '../components/Schedule';
 import Students from '../components/Students';
 import Teachers from '../components/Teachers';
-import ApiTest from '../components/ApiTest';
+import Settings from '../components/Settings';
 import { Loading } from '../components/ui/Loading';
 
 const AppRouter = () => {
@@ -104,13 +104,14 @@ const AppRouter = () => {
         } 
       />
       <Route 
-        path="/api-test" 
+        path="/settings" 
         element={
           <ProtectedRoute>
-            <ApiTest />
+            <Settings />
           </ProtectedRoute>
         } 
       />
+    
 
       {/* Маршруты с дополнительными проверками прав */}
       <Route 

@@ -23,7 +23,7 @@
 }
 
 .btn:focus-visible {
-  outline: 2px solid #468b8a;
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
 
@@ -57,7 +57,7 @@
 }
 
 .btn--primary:hover:not(.btn--disabled) {
-  background: var(--primary-hover);
+  background: var(--gradient-button-hover);
   box-shadow: var(--shadow-lg);
   transform: translateY(-2px) scale(1.02);
 }
@@ -100,7 +100,7 @@
 }
 
 .btn--ghost:hover:not(.btn--disabled) {
-  background: var(--gray-100);
+  background: var(--neutral-100);
   color: var(--text-primary);
   transform: translateY(-1px);
   box-shadow: var(--shadow-sm);
@@ -113,7 +113,7 @@
 }
 
 .btn--danger:hover:not(.btn--disabled) {
-  background: var(--error-hover);
+  background: var(--error-600);
   box-shadow: var(--shadow-lg);
   transform: translateY(-2px) scale(1.02);
 }
@@ -237,7 +237,7 @@
   }
   
   .btn--ghost:hover:not(.btn--disabled) {
-    background: var(--gray-100);
+    background: var(--neutral-100);
     color: var(--text-primary);
   }
 }
