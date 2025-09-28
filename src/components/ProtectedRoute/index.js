@@ -12,7 +12,6 @@ const ProtectedRoute = ({
   const { isAuthenticated, loading, user } = useAuth();
   const location = useLocation();
 
-  // Показываем загрузку во время проверки авторизации
   if (loading) {
     return (
       <div style={{ 

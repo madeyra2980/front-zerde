@@ -12,7 +12,7 @@ const Footer = () => {
           <div className="footer-section">
             <h3 className="footer-title">
               <FaGraduationCap className="footer-logo-icon" />
-              Zerde
+              SozLab
             </h3>
             <p className="footer-description">
               Современная система управления логопедическим центром.
@@ -57,15 +57,15 @@ const Footer = () => {
             <div className="footer-contact">
               <div className="contact-item">
                 <FaMapMarkerAlt className="contact-icon" />
-                <span>г. Алматы, ул. Абая 150</span>
+                <span>г. Семей, ул. Абая 107</span>
               </div>
               <div className="contact-item">
                 <FaPhone className="contact-icon" />
-                <span>+7 (727) 123-45-67</span>
+                <span>+7 (747) 184-90-36</span>
               </div>
               <div className="contact-item">
                 <FaEnvelope className="contact-icon" />
-                <span>info@zerde.kz</span>
+                <span>info@SozLab.kz</span>
               </div>
             </div>
           </div>
@@ -74,7 +74,7 @@ const Footer = () => {
         <div className="footer-bottom">
           <div className="footer-bottom-content">
             <p className="footer-copyright">
-              © {currentYear} Zerde. Все права защищены.
+              © {currentYear} SozLab. Все права защищены.
             </p>
             <div className="footer-legal">
               <a href="/privacy">Политика конфиденциальности</a>

@@ -82,6 +82,8 @@ class AuthService {
         
         this.isAuthenticated = true;
         this.user = response.user || { email: credentials.email };
+        
+        console.log('Авторизация успешна. Пользователь:', this.user);
         this.notify();
         
         return { success: true, data: response };

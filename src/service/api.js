@@ -7,6 +7,83 @@ class ApiService {
     this.baseURL = API_BASE_URL;
     this.isRefreshing = false;
     this.failedQueue = [];
+    // Убираем автоматическое обновление токенов - они теперь живут 1 год
+    // this.refreshInterval = null;
+    // this.startAutoRefresh();
+  }
+
+  stopAutoRefresh() {
+    if (this.refreshInterval) {
+      clearInterval(this.refreshInterval);
+      this.refreshInterval = null;
+    }
+  }
+
+  async autoRefreshToken() {
+    const refreshToken = localStorage.getItem('refreshToken');
+    if (!refreshToken) {
+      console.log('API: Нет refresh token для автоматического обновления');
+      return;
+    }
+
+    try {
+      console.log('API: Автоматическое обновление токена...');
+      const response = await this.refreshToken(refreshToken);
+      
+      if (response.token) {
+        localStorage.setItem('accessToken', response.token);
+        if (response.refreshToken) {
+          localStorage.setItem('refreshToken', response.refreshToken);
+        }
+        console.log('API: Токены автоматически обновлены');
+      }
+    } catch (error) {
+      console.error('API: Ошибка автоматического обновления токена:', error);
+      // Если refresh token тоже истек, перенаправляем на логин
+      if (error.message.includes('401') || error.message.includes('403')) {
+        this.logout();
+      }
+    }
+  }
+
+  logout() {
+    this.stopAutoRefresh();
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    window.location.href = '/signin';
+  }
+
+  // Ручное обновление токенов
+  async manualRefreshToken() {
+    const refreshToken = localStorage.getItem('refreshToken');
+    const currentToken = localStorage.getItem('accessToken');
+    
+    console.log('API: Текущий access token:', currentToken);
+    console.log('API: Текущий refresh token:', refreshToken);
+    
+    if (!refreshToken) {
+      throw new Error('Нет refresh token для обновления');
+    }
+
+    try {
+      console.log('API: Ручное обновление токена...');
+      const response = await this.refreshToken(refreshToken);
+      
+      console.log('API: Ответ от refresh:', response);
+      
+      if (response.token) {
+        localStorage.setItem('accessToken', response.token);
+        if (response.refreshToken) {
+          localStorage.setItem('refreshToken', response.refreshToken);
+        }
+        console.log('API: Токены обновлены вручную');
+        console.log('API: Новый access token:', response.token);
+        return response;
+      }
+    } catch (error) {
+      console.error('API: Ошибка ручного обновления токена:', error);
+      throw error;
+    }
   }
 
   // Обработка очереди запросов во время рефреша токена
@@ -99,6 +176,20 @@ class ApiService {
         if (response.status === 401 && token && !endpoint.includes('/auth/refresh')) {
           console.log('API: Токен истек, обновляем...');
           return this.handleTokenRefresh(endpoint, options);
+        }
+        
+        // Специальная обработка для ошибки 423 (Locked)
+        if (response.status === 423) {
+          console.log('API: Ошибка 423 - Слот заблокирован. Детали ошибки:', errorData);
+          const errorMessage = errorData.message || errorData.error || 'Слот заблокирован';
+          throw new Error(`423 Locked: ${errorMessage}`);
+        }
+        
+        // Специальная обработка для ошибки 403 (Forbidden) - права доступа
+        if (response.status === 403) {
+          console.log('API: Ошибка 403 - Доступ запрещен. Детали ошибки:', errorData);
+          const errorMessage = errorData.message || errorData.error || 'Недостаточно прав доступа';
+          throw new Error(`403 Forbidden: ${errorMessage}`);
         }
         
         throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
@@ -382,6 +473,9 @@ class ApiService {
 
   // === УРОКИ ===
   async createLesson(lessonData) {
+    console.log('API: Создание урока с данными:', lessonData);
+    console.log('API: Текущий токен перед запросом:', localStorage.getItem('accessToken'));
+    
     try {
       const result = await this.request('/api/v1/admin/create-lesson', {
         method: 'POST',
@@ -390,9 +484,79 @@ class ApiService {
         },
         body: JSON.stringify(lessonData),
       });
+      console.log('API: Урок успешно создан:', result);
       return result;
     } catch (error) {
       console.error('API: Ошибка создания урока:', error);
+      console.error('API: Токен после ошибки:', localStorage.getItem('accessToken'));
+      throw error;
+    }
+  }
+
+  // === БЛОКИРОВКА СЛОТОВ ===
+  async createLockedSlot(lockData) {
+    console.log('API: Создание блокировки слота с данными:', lockData);
+    console.log('API: Типы данных:', {
+      lockDateTimeFrom: typeof lockData.lockDateTimeFrom,
+      lockDateTimeTo: typeof lockData.lockDateTimeTo,
+      roomName: typeof lockData.roomName
+    });
+    
+    try {
+      const requestBody = JSON.stringify(lockData);
+      console.log('API: Отправляем JSON:', requestBody);
+      
+      const result = await this.request('/api/v1/admin/lock-lesson', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: requestBody,
+      });
+      console.log('API: Блокировка слота успешно создана:', result);
+      return result;
+    } catch (error) {
+      console.error('API: Ошибка создания блокировки слота:', error);
+      console.error('API: Детали ошибки:', {
+        message: error.message,
+        stack: error.stack
+      });
+      
+      // Специальная обработка для ошибки 423
+      if (error.message.includes('423')) {
+        // Извлекаем детальное сообщение из ошибки
+        const detailMessage = error.message.replace('423 Locked: ', '');
+        throw new Error(`Слот заблокирован: ${detailMessage}`);
+      }
+      
+      // Специальная обработка для ошибки 403
+      if (error.message.includes('403')) {
+        // Извлекаем детальное сообщение из ошибки
+        const detailMessage = error.message.replace('403 Forbidden: ', '');
+        throw new Error(`Доступ запрещен: ${detailMessage}. Возможно, у вас недостаточно прав для блокировки слотов.`);
+      }
+      
+      throw error;
+    }
+  }
+
+  async getLockedSlots() {
+    console.log('API: Запрашиваем список заблокированных слотов...');
+    const result = await this.request('/api/v1/admin/lock-lesson');
+    console.log('API: Получен ответ заблокированных слотов:', result);
+    return result;
+  }
+
+  async deleteLockedSlot() {
+    console.log('API: Удаляем заблокированный слот...');
+    try {
+      const result = await this.request('/api/v1/admin/lock-lesson', {
+        method: 'DELETE',
+      });
+      console.log('API: Заблокированный слот успешно удален:', result);
+      return result;
+    } catch (error) {
+      console.error('API: Ошибка удаления заблокированного слота:', error);
       throw error;
     }
   }

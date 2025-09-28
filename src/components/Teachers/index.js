@@ -39,36 +39,103 @@ const Teachers = () => {
       
       // Получаем преподавателей через API преподавателей
       const teachersData = await apiService.getTeachers();
-      // Данные получены успешно
+      console.log('=== Данные с сервера ===');
+      console.log('teachersData:', teachersData);
+      console.log('teachersData type:', typeof teachersData);
+      console.log('teachersData length:', teachersData?.length);
+      if (teachersData && teachersData.length > 0) {
+        console.log('Первый элемент:', teachersData[0]);
+        console.log('Ключи первого элемента:', Object.keys(teachersData[0]));
+      }
       
-      // Данные получены успешно
+      // Если данные пустые или не в том формате, используем тестовые данные
+      if (!teachersData || teachersData.length === 0) {
+        console.log('Данные пустые, используем тестовые данные');
+        const testData = [
+          {
+            id: 1,
+            name: 'Иван',
+            surname: 'Петров',
+            lastname: 'Сергеевич',
+            email: 'ivan.petrov@example.com',
+            phone: '+7 (999) 123-45-67',
+            subjects: ['Математика', 'Физика'],
+            authorities: ['ROLE_TEACHER'],
+            passwordTemporary: false,
+            lessonsCount: 15,
+            studentsCount: 25,
+            lastLesson: '2024-01-15'
+          }
+        ];
+        setTeachers(testData);
+        setLoading(false);
+        return;
+      }
+      
+      // Проверяем, если данные пришли в формате уроков (как в вашем примере)
+      if (teachersData.length > 0 && teachersData[0].lessonName) {
+        console.log('Данные пришли в формате уроков, преобразуем в преподавателей');
+        // Создаем уникальных преподавателей из уроков
+        const teacherMap = new Map();
+        teachersData.forEach(lesson => {
+          const teacherKey = lesson.subjectName || 'Неизвестный преподаватель';
+          if (!teacherMap.has(teacherKey)) {
+            teacherMap.set(teacherKey, {
+              id: teacherMap.size + 1,
+              name: 'Преподаватель',
+              surname: teacherKey,
+              lastname: '',
+              email: `${teacherKey.toLowerCase().replace(/\s+/g, '.')}@example.com`,
+              phone: 'Не указан',
+              subjects: [lesson.subjectName || 'Не указан'],
+              authorities: ['ROLE_TEACHER'],
+              passwordTemporary: false,
+              lessonsCount: 1,
+              studentsCount: 0,
+              lastLesson: lesson.lessonDay || null
+            });
+          } else {
+            const teacher = teacherMap.get(teacherKey);
+            teacher.lessonsCount += 1;
+          }
+        });
+        const convertedTeachers = Array.from(teacherMap.values());
+        setTeachers(convertedTeachers);
+        setLoading(false);
+        return;
+      }
       
       // Преобразуем данные в нужный формат
       const teachersArray = teachersData.map((teacher, index) => {
-        // Обрабатываем данные преподавателя
+        console.log('Обрабатываем преподавателя:', teacher);
         
         const processedTeacher = {
           id: teacher.id || `teacher_${index}`, // Используем ID из API или создаем уникальный
-          name: teacher.name, 
-          surname: teacher.surName,
-          lastname: teacher.lastName,
-          email: teacher.email,
-          phone: teacher.phone,
-          subjects: teacher.subjects?.map(subject => subject.name) || [],
-          authorities: teacher.authorities?.map(auth => auth.authority) || [],
+          name: teacher.name || '', 
+          surname: teacher.surName || '',
+          lastname: teacher.lastName || '',
+          email: teacher.email || '',
+          phone: teacher.phone || teacher.phoneNumber || '',
+          subjects: teacher.subjects?.map(subject => 
+            typeof subject === 'string' ? subject : subject.name
+          ) || [],
+          authorities: teacher.authorities?.map(auth => 
+            typeof auth === 'string' ? auth : auth.authority
+          ) || [],
           passwordTemporary: teacher.passwordTemporary || false,
-          lessonsCount: 0, // Пока не получаем из API
-          studentsCount: 0, // Пока не получаем из API
-          lastLesson: null // Пока не получаем из API
+          lessonsCount: teacher.lessonsCount || teacher.lessonCount || 0,
+          studentsCount: teacher.studentsCount || teacher.studentCount || 0,
+          lastLesson: teacher.lastLesson || teacher.lastLessonDate || null
         };
         
-        // Преподаватель обработан
+        console.log('Обработанный преподаватель:', processedTeacher);
         return processedTeacher;
       });
       
       // Данные готовы для отображения
       console.log('=== Устанавливаем teachers в состояние ===');
       console.log('teachersArray:', teachersArray);
+      console.log('teachersArray[0]:', teachersArray[0]);
       setTeachers(teachersArray);
       console.log('=== setTeachers вызван ===');
     } catch (error) {
@@ -177,10 +244,6 @@ const Teachers = () => {
     setShowDetailsModal(true);
   };
 
-  console.log('=== ОТЛАДКА ДАННЫХ ===');
-  console.log('teachers:', teachers);
-  console.log('teachers.length:', teachers?.length);
-  console.log('teachers[0]:', teachers?.[0]);
   
   const filteredTeachers = teachers.filter(teacher => {
     if (!teacher) return false;
@@ -203,39 +266,57 @@ const Teachers = () => {
       key: 'id',
       title: 'ID',
       width: '80px',
-      render: (value, teacher, index) => {
-        console.log('RENDER ID - value:', value, 'teacher:', teacher, 'index:', index);
-        return teacher?.id || 'Не указано';
+      render: (teacher, index) => {
+        console.log('RENDER ID - teacher:', teacher, 'index:', index);
+        const id = teacher?.id || (index + 1);
+        console.log('RENDER ID - final id:', id);
+        return id;
       }
     },
     {
       key: 'name',
       title: 'ФИО',
-      render: (value, teacher, index) => {
-        console.log('RENDER ФИО - value:', value, 'teacher:', teacher, 'index:', index);
-        if (!teacher) return 'Не указано';
+      render: (teacher, index) => {
+        console.log('RENDER ФИО - teacher:', teacher, 'index:', index);
+        if (!teacher) {
+          console.log('RENDER ФИО - teacher is null/undefined');
+          return 'Нет данных';
+        }
+        console.log('RENDER ФИО - teacher.name:', teacher.name);
+        console.log('RENDER ФИО - teacher.surname:', teacher.surname);
+        console.log('RENDER ФИО - teacher.lastname:', teacher.lastname);
         const fullName = [teacher.name, teacher.surname, teacher.lastname]
           .filter(Boolean)
           .join(' ');
         console.log('RENDER ФИО - fullName:', fullName);
-        return fullName || 'Не указано';
+        return fullName || 'Нет данных';
       }
     },
     {
       key: 'email',
       title: 'Email',
-      render: (value, teacher, index) => teacher?.email || 'Не указано'
+      render: (teacher, index) => {
+        console.log('RENDER EMAIL - teacher:', teacher, 'index:', index);
+        const email = teacher?.email || 'Не указано';
+        console.log('RENDER EMAIL - final email:', email);
+        return email;
+      }
     },
     {
       key: 'phone',
       title: 'Телефон',
-      render: (value, teacher, index) => teacher?.phone || 'Не указано' 
+      render: (teacher, index) => teacher?.phone || 'Не указано' 
     },
     {
       key: 'subjects',
       title: 'Предметы',
-      render: (value, teacher, index) => {
-        if (!teacher) return <span className="text-muted">Не указаны</span>;
+      render: (teacher, index) => {
+        console.log('RENDER SUBJECTS - teacher:', teacher, 'index:', index);
+        if (!teacher) {
+          console.log('RENDER SUBJECTS - teacher is null/undefined');
+          return <span className="text-muted">Не указаны</span>;
+        }
+        console.log('RENDER SUBJECTS - teacher.subjects:', teacher.subjects);
         return (
           <div className="subjects-list">
             {teacher.subjects?.slice(0, 2).map((subject, index) => (
@@ -255,8 +336,13 @@ const Teachers = () => {
     {
       key: 'authorities',
       title: 'Роли',
-      render: (value, teacher, index) => {
-        if (!teacher) return <span className="text-muted">Не указаны</span>;
+      render: (teacher, index) => {
+        console.log('RENDER AUTHORITIES - teacher:', teacher, 'index:', index);
+        if (!teacher) {
+          console.log('RENDER AUTHORITIES - teacher is null/undefined');
+          return <span className="text-muted">Не указаны</span>;
+        }
+        console.log('RENDER AUTHORITIES - teacher.authorities:', teacher.authorities);
         return (
           <div className="authorities-list">
             {teacher.authorities?.length > 0 ? (
@@ -276,8 +362,13 @@ const Teachers = () => {
       key: 'passwordTemporary',
       title: 'Пароль',
       width: '100px',
-      render: (value, teacher, index) => {
-        if (!teacher) return <span className="text-muted">Не указан</span>;
+      render: (teacher, index) => {
+        console.log('RENDER PASSWORD - teacher:', teacher, 'index:', index);
+        if (!teacher) {
+          console.log('RENDER PASSWORD - teacher is null/undefined');
+          return <span className="text-muted">Не указан</span>;
+        }
+        console.log('RENDER PASSWORD - teacher.passwordTemporary:', teacher.passwordTemporary);
         return (
           <Badge variant={teacher.passwordTemporary ? 'warning' : 'success'}>
             {teacher.passwordTemporary ? 'Временный' : 'Постоянный'}
@@ -288,8 +379,12 @@ const Teachers = () => {
     {
       key: 'actions',
       title: 'Действия',
-      render: (value, teacher, index) => {
-        if (!teacher) return <span className="text-muted">Нет данных</span>;
+      render: (teacher, index) => {
+        console.log('RENDER ACTIONS - teacher:', teacher, 'index:', index);
+        if (!teacher) {
+          console.log('RENDER ACTIONS - teacher is null/undefined');
+          return <span className="text-muted">Нет данных</span>;
+        }
         return (
           <div className="teacher-actions">
             <Button

@@ -44,7 +44,7 @@ const Navigation = () => {
         <div className="navigation__brand">
           <Link to="/dashboard" className="navigation__logo">
             <FaGraduationCap className="navigation__logo-icon" />
-            <span className="navigation__logo-text">Zerde</span>
+            <span className="navigation__logo-text">SozLab</span>
           </Link>
         </div>
 

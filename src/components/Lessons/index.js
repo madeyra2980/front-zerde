@@ -108,6 +108,17 @@ const Lessons = () => {
     }, 3000);
   };
 
+  // Функция для ручного обновления токенов
+  const handleRefreshTokens = async () => {
+    try {
+      await apiService.manualRefreshToken();
+      addToast('Токены успешно обновлены!', 'success');
+    } catch (error) {
+      console.error('Ошибка обновления токенов:', error);
+      addToast('Ошибка обновления токенов', 'error');
+    }
+  };
+
 
 
   const handleCreateLesson = () => {
@@ -328,6 +339,7 @@ const Lessons = () => {
             <p>Создание, редактирование и просмотр уроков</p>
           </div>
           <div className="lessons-actions">
+
             <Button onClick={handleCreateLesson} >
               Создать урок
             </Button>
