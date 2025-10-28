@@ -178,20 +178,103 @@ const Settings = () => {
     }));
   };
 
-  // Удаление заблокированного слота
-  const handleDeleteLockedSlot = async (slot) => {
-    if (!window.confirm('Вы уверены, что хотите удалить эту блокировку слота?')) {
+  // Удаление предмета
+  const handleDeleteSubject = async (subject) => {
+    if (!window.confirm(`Вы уверены, что хотите удалить предмет "${subject.subject_name}"?`)) {
       return;
     }
 
     try {
       setLoading(true);
-      await apiService.deleteLockedSlot();
+      await apiService.deleteSubject(subject.subject_id);
+      await fetchSubjects();
+      addToast('Предмет успешно удален');
+    } catch (error) {
+      console.error('Ошибка удаления предмета:', error);
+      addToast('Ошибка удаления предмета', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Удаление аудитории
+  const handleDeleteRoom = async (room) => {
+    if (!window.confirm(`Вы уверены, что хотите удалить аудиторию "${room.room_name}"?`)) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await apiService.deleteRoom(room.room_id);
+      await fetchRooms();
+      addToast('Аудитория успешно удалена');
+    } catch (error) {
+      console.error('Ошибка удаления аудитории:', error);
+      addToast('Ошибка удаления аудитории', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Удаление группы
+  const handleDeleteGroup = async (group) => {
+      if (!window.confirm(`Вы уверены, что хотите удалить группу "${group.group_name}"?`)) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await apiService.deleteGroup(group.group_id);
+      await fetchGroups();
+      addToast('Группа успешно удалена');
+    } catch (error) {
+      console.error('Ошибка удаления группы:', error);
+      addToast('Ошибка удаления группы', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Удаление заблокированного слота
+  const handleDeleteLockedSlot = async (slot) => {
+    // Проверяем права доступа перед удалением
+    if (!canBlockSlots()) {
+      addToast('У вас нет прав для удаления блокировки слотов. Только администраторы могут выполнять эту операцию.', 'error');
+      return;
+    }
+
+    if (!window.confirm('Вы уверены, что хотите удалить эту блокировку слота?')) {
+      return;
+    }
+    console.log('Удаляем слот:', slot);
+    console.log('ID слота для удаления:', slot.lesson_id);
+
+    try {
+      setLoading(true);
+      // Передаем ID слота для удаления
+      await apiService.deleteLockedSlot(slot.lesson_id);
+      
+      // Обновляем список слотов
       await fetchLockedSlots();
+      
+      console.log('Количество слотов ПОСЛЕ удаления:', lockedSlots.length);
+      console.log('=== УДАЛЕНИЕ ЗАВЕРШЕНО ===');
+      
       addToast('Блокировка слота успешно удалена');
     } catch (error) {
       console.error('Ошибка удаления блокировки слота:', error);
-      addToast('Ошибка удаления блокировки слота', 'error');
+      
+      // Специальная обработка для ошибки 403
+      if (error.message.includes('403') || error.message.includes('Forbidden')) {
+        console.error('ДЕТАЛИ ОШИБКИ 403:');
+        console.error('- Токен:', localStorage.getItem('accessToken') ? 'Present' : 'Missing');
+        console.error('- Пользователь:', user);
+        console.error('- Права доступа:', canBlockSlots());
+        
+        addToast('Доступ запрещен: у вас недостаточно прав для удаления блокировки слотов. Проверьте, что вы вошли как администратор.', 'error');
+      } else {
+        addToast('Ошибка удаления блокировки слота', 'error');
+      }
     } finally {
       setLoading(false);
     }
@@ -351,7 +434,7 @@ const Settings = () => {
           <Button size="sm" variant="outline" onClick={() => console.log('Редактировать предмет', subject)}>
             Редактировать
           </Button>
-          <Button size="sm" variant="danger" onClick={() => console.log('Удалить предмет', subject)}>
+          <Button size="sm" variant="danger" onClick={() => handleDeleteSubject(subject)}>
             Удалить
           </Button>
         </div>
@@ -379,7 +462,7 @@ const Settings = () => {
           <Button size="sm" variant="outline" onClick={() => console.log('Редактировать аудиторию', room)}>
             Редактировать
           </Button>
-          <Button size="sm" variant="danger" onClick={() => console.log('Удалить аудиторию', room)}>
+          <Button size="sm" variant="danger" onClick={() => handleDeleteRoom(room)}>
             Удалить
           </Button>
         </div>
@@ -407,7 +490,7 @@ const Settings = () => {
           <Button size="sm" variant="outline" onClick={() => console.log('Редактировать группу', group)}>
             Редактировать
           </Button>
-          <Button size="sm" variant="danger" onClick={() => console.log('Удалить группу', group)}>
+          <Button size="sm" variant="danger" onClick={() => handleDeleteGroup(group)}>
             Удалить
           </Button>
         </div>
@@ -456,8 +539,46 @@ const Settings = () => {
       title: 'Действия',
       render: (value, slot) => (
         <div className="settings-actions">
-          <Button size="sm" variant="danger" onClick={() => handleDeleteLockedSlot(slot)}>
-            Удалить
+          {canBlockSlots() ? (
+            <Button 
+              size="sm" 
+              variant="danger" 
+              onClick={() => handleDeleteLockedSlot(slot)}
+              title="Удалить блокировку слота"
+            >
+              Удалить
+            </Button>
+          ) : (
+            <span style={{ 
+              color: '#666', 
+              fontSize: '12px',
+              padding: '4px 8px',
+              backgroundColor: '#f5f5f5',
+              borderRadius: '4px'
+            }}>
+              Нет прав
+            </span>
+          )}
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={() => {
+              console.log('=== ОТЛАДКА УДАЛЕНИЯ СЛОТА ===');
+              console.log('Слот для удаления:', slot);
+              console.log('ID слота:', slot.lesson_id);
+              if (localStorage.getItem('accessToken')) {
+                try {
+                  const payload = JSON.parse(atob(localStorage.getItem('accessToken').split('.')[1]));
+                  console.log('JWT Payload:', payload);
+                } catch (e) {
+                  console.error('Ошибка декодирования токена:', e);
+                }
+              }
+              console.log('==============================');
+            }}
+            style={{ marginLeft: '8px' }}
+          >
+            🔍
           </Button>
         </div>
       )
@@ -476,13 +597,12 @@ const Settings = () => {
   }
 
   return (
-    <>
+    <div className="settings">
     <Navigation />
     <div className="settings-container">
 
       <div className="settings-header">
         <div className="settings-title">
-          <div className="settings-icon">⚙️</div>
           <h1>Настройки системы</h1>
         </div>
         <p className="settings-description">
@@ -574,30 +694,7 @@ const Settings = () => {
                     ⚠️ <strong>Ограничение доступа:</strong> Только администраторы могут блокировать слоты.
                     Текущая роль: {user?.role || user?.userType || user?.type || 'не определена'}
                     <br />
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      onClick={() => {
-                        const token = localStorage.getItem('accessToken');
-                        console.log('=== ОТЛАДКА ПОЛЬЗОВАТЕЛЯ ===');
-                        console.log('User object:', user);
-                        console.log('Token:', token);
-                        if (token) {
-                          try {
-                            const payload = JSON.parse(atob(token.split('.')[1]));
-                            console.log('JWT Payload:', payload);
-                            console.log('Authorities:', payload.authorities);
-                          } catch (e) {
-                            console.error('Ошибка декодирования токена:', e);
-                          }
-                        }
-                        console.log('localStorage keys:', Object.keys(localStorage));
-                        console.log('========================');
-                      }}
-                      style={{ marginTop: '8px' }}
-                    >
-                      🔍 Отладка пользователя
-                    </Button>
+                    
                   </div>
                 )}
                 <Table
@@ -726,7 +823,7 @@ const Settings = () => {
         ))}
       </ToastContainer>
     </div>
-    </>
+    </div>
   );
 };
 

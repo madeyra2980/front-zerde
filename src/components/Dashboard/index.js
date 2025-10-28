@@ -38,7 +38,7 @@ const Dashboard = () => {
   };
 
   const quickActions = [
-    { title: 'Добавить занятие', icon: FaPlus, color: '#28a745', description: 'Создать новое занятие для ребенка' },
+    { title: 'Добавить занятие', icon: FaPlus, color: '#ffffff', description: 'Создать новое занятие для ребенка' },
     { title: 'Управление детьми', icon: FaUsers, color: '#007bff', description: 'Просмотр и редактирование списка детей' },
     { title: 'Расписание', icon: FaCalendarAlt, color: '#ffc107', description: 'Просмотр и управление расписанием' },
     { title: 'Настройки', icon: FaCog, color: '#6c757d', description: 'Настройки системы' }
@@ -65,7 +65,7 @@ const Dashboard = () => {
                     <CardHeader>
                       <div 
                         className="action-icon" 
-                        style={{ backgroundColor: action.color }}
+                        style={{ backgroundColor: action.color, color: action.color === '#ffffff' ? '#333' : 'white' }}
                       >
                         <IconComponent />
                       </div>
@@ -78,7 +78,7 @@ const Dashboard = () => {
                       <Button 
                         variant="outline" 
                         size="sm"
-                        style={{ borderColor: action.color, color: action.color }}
+                        style={{ borderColor: action.color === '#ffffff' ? '#333' : action.color, color: action.color === '#ffffff' ? '#333' : action.color }}
                         onClick={() => handleQuickAction(action)}
                       >
                         Открыть
@@ -92,29 +92,35 @@ const Dashboard = () => {
         </div>
       </div>
       
-      {/* Модальное окно */}
-      <Modal isOpen={showModal} onClose={() => setShowModal(false)}>
-        <ModalHeader>
-          <h3>{selectedAction?.title}</h3>
-        </ModalHeader>
-        <ModalBody>
-          <p>{selectedAction?.description}</p>
-          <p>Выберите действие для продолжения:</p>
-          <div className="modal-actions">
-            <Button variant="primary" size="sm">
-              Продолжить
-            </Button>
-            <Button variant="outline" size="sm">
-              Отмена
-            </Button>
-          </div>
-        </ModalBody>
-        <ModalFooter>
-          <Button variant="outline" onClick={() => setShowModal(false)}>
-            Закрыть
-          </Button>
-        </ModalFooter>
-      </Modal>
+      {/* Карточка действия */}
+      {showModal && selectedAction && (
+        <div className="dashboard-action-card">
+          <Card className="action-card">
+            <div className="action-header">
+              <h3>{selectedAction.title}</h3>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setShowModal(false)}
+              >
+                ✕
+              </Button>
+            </div>
+            <div className="action-content">
+              <p>{selectedAction.description}</p>
+              <p>Выберите действие для продолжения:</p>
+              <div className="action-buttons">
+                <Button variant="primary" size="sm">
+                  Продолжить
+                </Button>
+                <Button variant="outline" size="sm">
+                  Отмена
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
       
       {/* Toast контейнер */}
       <ToastContainer>

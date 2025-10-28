@@ -53,10 +53,6 @@ export const AuthProvider = ({ children }) => {
     authService.logout();
   };
 
-  const refreshToken = async () => {
-    return await authService.refreshToken();
-  };
-
   const value = {
     isAuthenticated,
     user,
@@ -64,7 +60,6 @@ export const AuthProvider = ({ children }) => {
     signup,
     signin,
     logout,
-    refreshToken,
   };
 
   return (

@@ -4,14 +4,13 @@ import { useAuth } from '../contexts/AuthContext';
 import PublicRoute from './PublicRoute';
 import ProtectedRoute from '../components/ProtectedRoute';
 import RouteGuard from './RouteGuard';
+import ScrollToTop from './ScrollToTop';
 
-// Импорт страниц
 import Signin from '../components/Signin';
 import Signup from '../components/Signup';
 import Dashboard from '../components/Dashboard';
 import Profile from '../components/Profile';
-import Lessons from '../components/Lessons';
-import Schedule from '../components/Schedule';
+
 import Students from '../components/Students';
 import Teachers from '../components/Teachers';
 import Settings from '../components/Settings';
@@ -35,8 +34,9 @@ const AppRouter = () => {
   }
 
   return (
-    <Routes>
-      {/* Публичные маршруты - доступны только неавторизованным пользователям */}
+    <>
+      <ScrollToTop />
+      <Routes>
       <Route 
         path="/signin" 
         element={
@@ -71,22 +71,8 @@ const AppRouter = () => {
           </ProtectedRoute>
         } 
       />
-      <Route 
-        path="/lessons" 
-        element={
-          <ProtectedRoute>
-            <Lessons />
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/schedule" 
-        element={
-          <ProtectedRoute>
-            <Schedule />
-          </ProtectedRoute>
-        } 
-      />
+
+
       <Route 
         path="/students" 
         element={
@@ -112,8 +98,6 @@ const AppRouter = () => {
         } 
       />
     
-
-      {/* Маршруты с дополнительными проверками прав */}
       <Route 
         path="/admin" 
         element={
@@ -123,7 +107,6 @@ const AppRouter = () => {
         } 
       />
 
-      {/* Корневой маршрут - перенаправление */}
       <Route 
         path="/" 
         element={<Navigate to="/dashboard" replace />} 
@@ -134,7 +117,8 @@ const AppRouter = () => {
         path="*" 
         element={<div>Страница не найдена</div>} 
       />
-    </Routes>
+      </Routes>
+    </>
   );
 };
 

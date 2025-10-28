@@ -34,7 +34,7 @@
 
 .footer-logo-icon {
   font-size: var(--text-3xl);
-  color: #4ade80;
+  color: white;
 }
 
 .footer-description {
@@ -112,7 +112,7 @@
 }
 
 .contact-icon {
-  color: #4ade80;
+  color: white;
   font-size: var(--text-base);
   min-width: 16px;
 }

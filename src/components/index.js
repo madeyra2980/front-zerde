@@ -3,3 +3,4 @@ export { default as Signup } from './Signup';
 export { default as Dashboard } from './Dashboard';
 export { default as ProtectedRoute } from './ProtectedRoute';
 export { default as Settings } from './Settings';
+export { default as Teachers } from './Teachers';

@@ -1,8 +1,7 @@
 @import './styles/variables.css';
 
 .App {
-  min-height: 100vh;
-  background: var(--gradient-background);
+  height: 100vh;
 }
 
 .App-main {

@@ -7,7 +7,6 @@ class AuthService {
     this.listeners = [];
   }
 
-  // Подписка на изменения состояния авторизации
   subscribe(listener) {
     this.listeners.push(listener);
     return () => {
@@ -50,9 +49,6 @@ class AuthService {
       
       if (response.token) {
         localStorage.setItem('accessToken', response.token);
-        if (response.refreshToken) {
-          localStorage.setItem('refreshToken', response.refreshToken);
-        }
         localStorage.setItem('user', JSON.stringify(response.user || userData));
         
         this.isAuthenticated = true;
@@ -75,9 +71,6 @@ class AuthService {
       
       if (response.token) {
         localStorage.setItem('accessToken', response.token);
-        if (response.refreshToken) {
-          localStorage.setItem('refreshToken', response.refreshToken);
-        }
         localStorage.setItem('user', JSON.stringify(response.user || { email: credentials.email }));
         
         this.isAuthenticated = true;
@@ -95,33 +88,9 @@ class AuthService {
     }
   }
 
-  // Обновление токена
-  async refreshToken() {
-    try {
-      const refreshToken = localStorage.getItem('refreshToken');
-      if (!refreshToken) return { success: false, error: 'No refresh token available' };
-
-      const response = await apiService.refreshToken(refreshToken);
-      
-      if (response.token) {
-        localStorage.setItem('accessToken', response.token);
-        if (response.refreshToken) {
-          localStorage.setItem('refreshToken', response.refreshToken);
-        }
-        return { success: true, data: response };
-      }
-      
-      return { success: false, error: 'No new token received' };
-    } catch (error) {
-      this.logout();
-      return { success: false, error: error.message };
-    }
-  }
-
   // Выход
   logout() {
     localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
     this.isAuthenticated = false;
     this.user = null;

@@ -11,7 +11,7 @@ function App() {
       <Router>
         <div className="App">
           <AppRouter />
-      <Footer />
+          <Footer />
         </div>
       </Router>
     </AuthProvider>

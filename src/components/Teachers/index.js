@@ -1,417 +1,448 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Card, Button, Loading, Modal, Table, Badge, Input, Toast, ToastContainer, useToast } from '../ui';
+import React, { useState, useEffect } from 'react';
+import { Card, Button, Loading, Table, Badge, Input, Toast, ToastContainer, useToast } from '../ui';
 import Navigation from '../Navigation';
 import apiService from '../../service/api';
 import { useAuth } from '../../contexts/AuthContext';
 import './Teachers.css';
 
 const Teachers = () => {
-  const { isAuthenticated, user } = useAuth();
+  const { user } = useAuth();
+  const toastApi = useToast();
+  const { toasts, removeToast } = toastApi;
+  const success = toastApi.success;
+  const showError = toastApi.error;
+  const warning = toastApi.warning;
   const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState(null);
-  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showDetailsForm, setShowDetailsForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [formData, setFormData] = useState({
+  const [subjects, setSubjects] = useState([]);
+  const [newTeacher, setNewTeacher] = useState({
     name: '',
     surname: '',
     lastname: '',
-    email: ''
+    email: '',
+    phone: '',
+    subjectId: ''
   });
-  const [submitting, setSubmitting] = useState(false);
-  const { info: showToast, toasts, removeToast } = useToast();
+  
+  const [editTeacher, setEditTeacher] = useState({
+    name: '',
+    surname: '',
+    lastname: '',
+    email: '',
+    phone: '',
+    subjectId: ''
+  });
 
   useEffect(() => {
-    console.log('=== useEffect вызван ===');
-    console.log('isAuthenticated:', isAuthenticated);
-    console.log('user:', user);
+    console.log('=== Информация о текущем пользователе ===');
+    console.log('User:', user);
+    console.log('Token:', localStorage.getItem('accessToken'));
+    
+    // Пытаемся декодировать токен, чтобы увидеть роли
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (token) {
+        const cleanToken = token.replace(/^Bearer\s+/i, '').trim().replace(/^"|"$/g, '');
+        const parts = cleanToken.split('.');
+        if (parts.length === 3) {
+          const payload = JSON.parse(atob(parts[1]));
+          console.log('Token payload:', payload);
+          console.log('Roles/Authorities:', payload.authorities || payload.roles || 'Не найдено');
+        }
+      }
+    } catch (error) {
+      console.error('Не удалось декодировать токен:', error);
+    }
+    
     fetchTeachers();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    fetchSubjects();
+  }, [user]);
 
   const fetchTeachers = async () => {
     try {
       setLoading(true);
-      console.log('=== fetchTeachers вызван ===');
-      console.log('isAuthenticated:', isAuthenticated);
-      console.log('user:', user);
-      console.log('Загружаем преподавателей...');
-      
-      // Получаем преподавателей через API преподавателей
+      console.log('=== Начинаем загрузку преподавателей ===');
       const teachersData = await apiService.getTeachers();
-      console.log('=== Данные с сервера ===');
-      console.log('teachersData:', teachersData);
-      console.log('teachersData type:', typeof teachersData);
-      console.log('teachersData length:', teachersData?.length);
-      if (teachersData && teachersData.length > 0) {
-        console.log('Первый элемент:', teachersData[0]);
-        console.log('Ключи первого элемента:', Object.keys(teachersData[0]));
+      console.log('Полученные данные преподавателей:', teachersData);
+      console.log('Тип данных:', typeof teachersData);
+      console.log('Является ли массивом:', Array.isArray(teachersData));
+      console.log('Количество преподавателей:', Array.isArray(teachersData) ? teachersData.length : 0);
+      
+      // Показываем первого преподавателя для проверки структуры
+      if (Array.isArray(teachersData) && teachersData.length > 0) {
+        console.log('Пример данных первого преподавателя:', teachersData[0]);
+        console.log('Поля первого преподавателя:', Object.keys(teachersData[0]));
       }
       
-      // Если данные пустые или не в том формате, используем тестовые данные
-      if (!teachersData || teachersData.length === 0) {
-        console.log('Данные пустые, используем тестовые данные');
-        const testData = [
-          {
-            id: 1,
-            name: 'Иван',
-            surname: 'Петров',
-            lastname: 'Сергеевич',
-            email: 'ivan.petrov@example.com',
-            phone: '+7 (999) 123-45-67',
-            subjects: ['Математика', 'Физика'],
-            authorities: ['ROLE_TEACHER'],
-            passwordTemporary: false,
-            lessonsCount: 15,
-            studentsCount: 25,
-            lastLesson: '2024-01-15'
-          }
-        ];
-        setTeachers(testData);
-        setLoading(false);
-        return;
+      // Убеждаемся, что teachersData является массивом
+      if (Array.isArray(teachersData)) {
+        // Add id field to each teacher for tracking
+        const teachersWithId = teachersData.map((teacher, index) => ({
+          ...teacher,
+          id: teacher.id || teacher.teacherId || teacher.userId || teacher.teacher_id || index + 1
+        }));
+        setTeachers(teachersWithId);
+        console.log('✅ Преподаватели успешно загружены');
+      } else {
+        console.warn('❌ API вернул не массив, устанавливаем пустой массив');
+        setTeachers([]);
       }
-      
-      // Проверяем, если данные пришли в формате уроков (как в вашем примере)
-      if (teachersData.length > 0 && teachersData[0].lessonName) {
-        console.log('Данные пришли в формате уроков, преобразуем в преподавателей');
-        // Создаем уникальных преподавателей из уроков
-        const teacherMap = new Map();
-        teachersData.forEach(lesson => {
-          const teacherKey = lesson.subjectName || 'Неизвестный преподаватель';
-          if (!teacherMap.has(teacherKey)) {
-            teacherMap.set(teacherKey, {
-              id: teacherMap.size + 1,
-              name: 'Преподаватель',
-              surname: teacherKey,
-              lastname: '',
-              email: `${teacherKey.toLowerCase().replace(/\s+/g, '.')}@example.com`,
-              phone: 'Не указан',
-              subjects: [lesson.subjectName || 'Не указан'],
-              authorities: ['ROLE_TEACHER'],
-              passwordTemporary: false,
-              lessonsCount: 1,
-              studentsCount: 0,
-              lastLesson: lesson.lessonDay || null
-            });
-          } else {
-            const teacher = teacherMap.get(teacherKey);
-            teacher.lessonsCount += 1;
-          }
-        });
-        const convertedTeachers = Array.from(teacherMap.values());
-        setTeachers(convertedTeachers);
-        setLoading(false);
-        return;
-      }
-      
-      // Преобразуем данные в нужный формат
-      const teachersArray = teachersData.map((teacher, index) => {
-        console.log('Обрабатываем преподавателя:', teacher);
-        
-        const processedTeacher = {
-          id: teacher.id || `teacher_${index}`, // Используем ID из API или создаем уникальный
-          name: teacher.name || '', 
-          surname: teacher.surName || '',
-          lastname: teacher.lastName || '',
-          email: teacher.email || '',
-          phone: teacher.phone || teacher.phoneNumber || '',
-          subjects: teacher.subjects?.map(subject => 
-            typeof subject === 'string' ? subject : subject.name
-          ) || [],
-          authorities: teacher.authorities?.map(auth => 
-            typeof auth === 'string' ? auth : auth.authority
-          ) || [],
-          passwordTemporary: teacher.passwordTemporary || false,
-          lessonsCount: teacher.lessonsCount || teacher.lessonCount || 0,
-          studentsCount: teacher.studentsCount || teacher.studentCount || 0,
-          lastLesson: teacher.lastLesson || teacher.lastLessonDate || null
-        };
-        
-        console.log('Обработанный преподаватель:', processedTeacher);
-        return processedTeacher;
-      });
-      
-      // Данные готовы для отображения
-      console.log('=== Устанавливаем teachers в состояние ===');
-      console.log('teachersArray:', teachersArray);
-      console.log('teachersArray[0]:', teachersArray[0]);
-      setTeachers(teachersArray);
-      console.log('=== setTeachers вызван ===');
     } catch (error) {
-      console.error('Ошибка загрузки преподавателей:', error);
-      showToast(`Ошибка загрузки преподавателей: ${error.message}`, 'error');
+      console.error('❌ Ошибка загрузки преподавателей:', error);
+      console.error('Детали ошибки:', error.message);
+      if (error.message.includes('403')) {
+        console.error('⚠️ Ошибка доступа: Убедитесь, что у вас есть права ADMIN');
+      }
+      setTeachers([]); 
     } finally {
       setLoading(false);
+      console.log('=== Загрузка преподавателей завершена ===');
     }
   };
 
-
+  const fetchSubjects = async () => {
+    try {
+      const subjectsData = await apiService.getSubjects();
+      console.log('Полученные предметы:', subjectsData);
+      if (Array.isArray(subjectsData)) {
+        setSubjects(subjectsData);
+      } else {
+        console.warn('API по предметам вернул не массив, устанавливаем []');
+        setSubjects([]);
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки предметов:', error);
+    }
+  };
 
   const handleCreateTeacher = () => {
-    setFormData({
+    setShowCreateForm(true);
+  };
+
+  const handleViewDetails = (teacher) => {
+    setSelectedTeacher(teacher);
+    setShowDetailsForm(true);
+  };
+
+  const handleEditTeacher = (teacher) => {
+    console.log('=== ОТКРЫТИЕ ФОРМЫ РЕДАКТИРОВАНИЯ ===');
+    console.log('Teacher object:', teacher);
+    console.log('Teacher ID:', teacher.id);
+    console.log('Teacher ID (alternative fields):', {
+      id: teacher.id,
+      teacherId: teacher.teacherId,
+      userId: teacher.userId,
+      teacher_id: teacher.teacher_id
+    });
+    console.log('===============================');
+    
+    setSelectedTeacher(teacher);
+    // Find the subject ID if the teacher has subjects
+    let subjectId = '';
+    if (teacher.subjects && teacher.subjects.length > 0) {
+      const firstSubject = teacher.subjects[0];
+      const subject = subjects.find(s => 
+        s.subject_name === firstSubject.subject_name || 
+        s.name === firstSubject.name ||
+        s.subject_id === firstSubject.subject_id
+      );
+      subjectId = subject ? (subject.subject_id || subject.id) : '';
+    }
+    
+    setEditTeacher({
+      name: teacher.name || '',
+      surname: teacher.surName || '',
+      lastname: teacher.lastName || '',
+      email: teacher.email || '',
+      phone: teacher.phone || '',
+      subjectId: subjectId
+    });
+    setShowEditForm(true);
+  };
+
+  const handleCloseCreateForm = () => {
+    setShowCreateForm(false);
+    setNewTeacher({
       name: '',
       surname: '',
       lastname: '',
-      email: ''
+      email: '',
+      phone: '',
+      subjectId: ''
     });
-    setShowCreateModal(true);
   };
 
-  const handleInputChange = useCallback((e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
+  const handleCloseEditForm = () => {
+    setShowEditForm(false);
+    setSelectedTeacher(null);
+    setEditTeacher({
+      name: '',
+      surname: '',
+      lastname: '',
+      email: '',
+      phone: '',
+      subjectId: ''
+    });
+  };
+
+  const handleCloseDetailsForm = () => {
+    setShowDetailsForm(false);
+    setSelectedTeacher(null);
+  };
+
+  const handleInputChange = (field, value) => {
+    setNewTeacher(prev => ({
       ...prev,
-      [name]: value
+      [field]: value
     }));
-  }, []);
-
-  const validateForm = () => {
-    const errors = [];
-    
-    // Проверка обязательных полей
-    if (!formData.name.trim()) {
-      errors.push('Имя обязательно для заполнения');
-    }
-    if (!formData.surname.trim()) {
-      errors.push('Фамилия обязательна для заполнения');
-    }
-    if (!formData.email.trim()) {
-      errors.push('Email обязателен для заполнения');
-    }
-    
-    // Проверка формата email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (formData.email && !emailRegex.test(formData.email)) {
-      errors.push('Некорректный формат email');
-    }
-    
-    // Проверка формата имени (только буквы, пробелы, дефисы)
-    const nameRegex = /^[а-яёА-ЯЁa-zA-Z\s-]+$/;
-    if (formData.name && !nameRegex.test(formData.name)) {
-      errors.push('Имя может содержать только буквы, пробелы и дефисы');
-    }
-    if (formData.surname && !nameRegex.test(formData.surname)) {
-      errors.push('Фамилия может содержать только буквы, пробелы и дефисы');
-    }
-    if (formData.lastname && !nameRegex.test(formData.lastname)) {
-      errors.push('Отчество может содержать только буквы, пробелы и дефисы');
-    }
-    
-    return errors;
   };
 
-  const handleSubmitTeacher = async (e) => {
-    e.preventDefault();
-    
-    const validationErrors = validateForm();
-    if (validationErrors.length > 0) {
-      showToast(validationErrors.join('. '), 'error');
+  const handleEditInputChange = (field, value) => {
+    setEditTeacher(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+
+  const handleCreateTeacherSubmit = async () => {
+    // Валидация
+    if (!newTeacher.name || !newTeacher.surname || !newTeacher.lastname || !newTeacher.email || !newTeacher.subjectId) {
+      warning('Пожалуйста, заполните все обязательные поля');
       return;
     }
 
     try {
-      setSubmitting(true);
-      
-      // Подготавливаем данные для отправки
+      // Находим предмет по ID - Backend возвращает subject_id и subject_name
+      const selectedSubject = subjects.find(subject => subject.subject_id === parseInt(newTeacher.subjectId));
       const teacherData = {
-        name: formData.name.trim(),
-        surname: formData.surname.trim(),
-        lastname: formData.lastname.trim() || '',
-        email: formData.email.trim().toLowerCase()
+        name: newTeacher.name,
+        surName: newTeacher.surname,  // Backend ожидает surName
+        lastName: newTeacher.lastname, // Backend ожидает lastName
+        email: newTeacher.email,
+        phone: newTeacher.phone,
+        subjectName: selectedSubject ? (selectedSubject.subject_name || '') : ''
       };
       
-      console.log('Отправляем данные:', teacherData);
-      
+      console.log('Отправляем данные преподавателя:', teacherData);
       await apiService.createTeacher(teacherData);
-      
-      showToast('Преподаватель успешно создан!', 'success');
-      setShowCreateModal(false);
-      fetchTeachers(); // Обновляем список
+      await fetchTeachers();
+      handleCloseCreateForm();
+      success('Преподаватель успешно добавлен');
     } catch (error) {
       console.error('Ошибка создания преподавателя:', error);
-      showToast(`Ошибка создания преподавателя: ${error.message}`, 'error');
-    } finally {
-      setSubmitting(false);
+      showError(`Ошибка: ${error.message}`);
     }
   };
 
+  const handleEditTeacherSubmit = async () => {
+    // Валидация
+    if (!editTeacher.name || !editTeacher.surname || !editTeacher.lastname || !editTeacher.email || !editTeacher.subjectId) {
+      warning('Пожалуйста, заполните все обязательные поля');
+      return;
+    }
 
+    // Диагностика перед редактированием
+    console.log('=== ДИАГНОСТИКА ПЕРЕД РЕДАКТИРОВАНИЕМ ПРЕПОДАВАТЕЛЯ ===');
+    const token = localStorage.getItem('accessToken');
+    console.log('Raw token:', token);
+    
+    try {
+      if (token) {
+        const cleanToken = token.replace(/^Bearer\s+/i, '').trim().replace(/^"|"$/g, '');
+        const parts = cleanToken.split('.');
+        if (parts.length === 3) {
+          const payload = JSON.parse(atob(parts[1]));
+          console.log('Token payload:', payload);
+          console.log('Roles/Authorities:', payload.authorities || payload.roles || 'Не найдено');
+        }
+      }
+    } catch (error) {
+      console.error('Ошибка декодирования токена:', error);
+    }
+    console.log('Teacher ID:', selectedTeacher.id);
+    console.log('===============================');
 
-
-  const handleViewDetails = (teacher) => {
-    setSelectedTeacher(teacher);
-    setShowDetailsModal(true);
+    try {
+      // Находим предмет по ID
+      const selectedSubject = subjects.find(subject => subject.subject_id === parseInt(editTeacher.subjectId));
+      const teacherData = {
+        name: editTeacher.name,
+        surName: editTeacher.surname,
+        lastName: editTeacher.lastname,
+        email: editTeacher.email,
+        phone: editTeacher.phone,
+        subjectName: selectedSubject ? (selectedSubject.subject_name || '') : ''
+      };
+      
+      console.log('Отправляем данные для редактирования преподавателя:', teacherData);
+      
+      // Try different ID fields
+      const teacherId = selectedTeacher.id || selectedTeacher.teacherId || selectedTeacher.userId || selectedTeacher.teacher_id;
+      console.log('Using teacher ID for edit:', teacherId);
+      
+      await apiService.editTeacher(teacherId, teacherData);
+      await fetchTeachers();
+      handleCloseEditForm();
+      success('Преподаватель успешно отредактирован');
+    } catch (error) {
+      console.error('Ошибка редактирования преподавателя:', error);
+      if (error.message.includes('403')) {
+        showError('Доступ запрещен. Убедитесь, что у вас есть права ADMIN для редактирования преподавателей.');
+      } else {
+        showError(`Ошибка: ${error.message}`);
+      }
+    }
   };
 
-  
-  const filteredTeachers = teachers.filter(teacher => {
-    if (!teacher) return false;
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      teacher.name?.toLowerCase().includes(searchLower) ||
-      teacher.surname?.toLowerCase().includes(searchLower) ||
-      teacher.email?.toLowerCase().includes(searchLower) ||
-      teacher.subjects?.some(subject => subject.toLowerCase().includes(searchLower))
-    );
-  });
-  
-  console.log('filteredTeachers:', filteredTeachers);
-  console.log('filteredTeachers.length:', filteredTeachers?.length);
-  console.log('filteredTeachers[0]:', filteredTeachers?.[0]);
+  const handleDeleteTeacher = async (teacher) => {
+    const teacherName = `${teacher.name} ${teacher.surName} ${teacher.lastName}`;
+    const confirmed = window.confirm(`Вы уверены, что хотите удалить преподавателя "${teacherName}"?`);
+    
+    if (!confirmed) {
+      return;
+    }
 
+
+    
+    const token = localStorage.getItem('accessToken');
+    console.log('Raw token:', token);
+    
+    try {
+      if (token) {
+        const cleanToken = token.replace(/^Bearer\s+/i, '').trim().replace(/^"|"$/g, '');
+        const parts = cleanToken.split('.');
+        if (parts.length === 3) {
+          const payload = JSON.parse(atob(parts[1]));
+          console.log('Token payload:', payload);
+          console.log('Roles/Authorities:', payload.authorities || payload.roles || 'Не найдено');
+        }
+      }
+    } catch (error) {
+      console.error('Ошибка декодирования токена:', error);
+    }
+    console.log('===============================');
+
+    // Try different ID fields
+    const teacherId = teacher.id || teacher.teacherId || teacher.userId || teacher.teacher_id;
+    console.log('Using teacher ID:', teacherId);
+
+    try {
+      await apiService.deleteTeacher(teacherId);
+      await fetchTeachers();
+      success('Преподаватель успешно удален');
+    } catch (error) {
+      console.error('Ошибка удаления преподавателя:', error);
+      if (error.message.includes('403')) {
+        showError('Доступ запрещен. Убедитесь, что у вас есть права ADMIN для удаления преподавателей.');
+      } else {
+        showError(`Ошибка: ${error.message}`);
+      }
+    }
+  };
+
+  const filteredTeachers = Array.isArray(teachers) ? teachers.filter(teacher => {
+    // Backend возвращает surName и lastName
+    const fullName = `${teacher.name || ''} ${teacher.surName || ''} ${teacher.lastName || ''}`.toLowerCase();
+    const email = (teacher.email || '').toLowerCase();
+    const search = searchTerm.toLowerCase();
+    return fullName.includes(search) || email.includes(search);
+  }) : [];
+
+  const getTeacherSubjects = (teacher) => {
+    if (!teacher.subjects || !Array.isArray(teacher.subjects)) return 'Нет предметов';
+    // Backend возвращает subject_name или name
+    return teacher.subjects.map(subject => subject.subject_name || subject.name).join(', ');
+  };
+
+  const getTeacherAuthorities = (teacher) => {
+    if (!teacher.authorities) return 'Нет ролей';
+    // Authorities теперь приходит как массив объектов с полем authority
+    if (Array.isArray(teacher.authorities)) {
+      return teacher.authorities.map(auth => auth.authority || auth).join(', ');
+    }
+    // На случай если приходит один объект
+    return teacher.authorities.authority || teacher.authorities;
+  };
 
   const columns = [
     {
-      key: 'id',
-      title: 'ID',
-      width: '80px',
-      render: (teacher, index) => {
-        console.log('RENDER ID - teacher:', teacher, 'index:', index);
-        const id = teacher?.id || (index + 1);
-        console.log('RENDER ID - final id:', id);
-        return id;
-      }
-    },
-    {
       key: 'name',
       title: 'ФИО',
-      render: (teacher, index) => {
-        console.log('RENDER ФИО - teacher:', teacher, 'index:', index);
-        if (!teacher) {
-          console.log('RENDER ФИО - teacher is null/undefined');
-          return 'Нет данных';
-        }
-        console.log('RENDER ФИО - teacher.name:', teacher.name);
-        console.log('RENDER ФИО - teacher.surname:', teacher.surname);
-        console.log('RENDER ФИО - teacher.lastname:', teacher.lastname);
-        const fullName = [teacher.name, teacher.surname, teacher.lastname]
-          .filter(Boolean)
-          .join(' ');
-        console.log('RENDER ФИО - fullName:', fullName);
-        return fullName || 'Нет данных';
-      }
+      render: (teacher) => `${teacher.name || ''} ${teacher.surName || ''} ${teacher.lastName || ''}`
     },
     {
       key: 'email',
       title: 'Email',
-      render: (teacher, index) => {
-        console.log('RENDER EMAIL - teacher:', teacher, 'index:', index);
-        const email = teacher?.email || 'Не указано';
-        console.log('RENDER EMAIL - final email:', email);
-        return email;
-      }
-    },
-    {
-      key: 'phone',
-      title: 'Телефон',
-      render: (teacher, index) => teacher?.phone || 'Не указано' 
+      render: (teacher) => teacher.email || 'Не указан'
     },
     {
       key: 'subjects',
       title: 'Предметы',
-      render: (teacher, index) => {
-        console.log('RENDER SUBJECTS - teacher:', teacher, 'index:', index);
-        if (!teacher) {
-          console.log('RENDER SUBJECTS - teacher is null/undefined');
-          return <span className="text-muted">Не указаны</span>;
-        }
-        console.log('RENDER SUBJECTS - teacher.subjects:', teacher.subjects);
-        return (
-          <div className="subjects-list">
-            {teacher.subjects?.slice(0, 2).map((subject, index) => (
-              <Badge key={index} variant="outline" className="subject-badge">
-                {subject}
-              </Badge>
-            ))}
-            {teacher.subjects?.length > 2 && (
-              <Badge variant="secondary" className="more-subjects">
-                +{teacher.subjects.length - 2}
-              </Badge>
-            )}
-          </div>
-        );
-      }
+      render: (teacher) => (
+        <div className="teacher-subjects">
+          {getTeacherSubjects(teacher)}
+        </div>
+      )
     },
     {
       key: 'authorities',
       title: 'Роли',
-      render: (teacher, index) => {
-        console.log('RENDER AUTHORITIES - teacher:', teacher, 'index:', index);
-        if (!teacher) {
-          console.log('RENDER AUTHORITIES - teacher is null/undefined');
-          return <span className="text-muted">Не указаны</span>;
-        }
-        console.log('RENDER AUTHORITIES - teacher.authorities:', teacher.authorities);
-        return (
-          <div className="authorities-list">
-            {teacher.authorities?.length > 0 ? (
-              teacher.authorities.map((authority, index) => (
-                <Badge key={index} variant="secondary" size="sm">
-                  {authority}
-                </Badge>
-              ))
-            ) : (
-              <span className="text-muted">Не указаны</span>
-            )}
-          </div>
-        );
-      }
+      render: (teacher) => (
+        <div className="teacher-authorities">
+          {teacher.authorities?.map((auth, index) => (
+            <Badge key={index} variant="info" size="sm">
+              {auth.authority}
+            </Badge>
+          ))}
+        </div>
+      )
     },
     {
       key: 'passwordTemporary',
-      title: 'Пароль',
-      width: '100px',
-      render: (teacher, index) => {
-        console.log('RENDER PASSWORD - teacher:', teacher, 'index:', index);
-        if (!teacher) {
-          console.log('RENDER PASSWORD - teacher is null/undefined');
-          return <span className="text-muted">Не указан</span>;
-        }
-        console.log('RENDER PASSWORD - teacher.passwordTemporary:', teacher.passwordTemporary);
-        return (
-          <Badge variant={teacher.passwordTemporary ? 'warning' : 'success'}>
-            {teacher.passwordTemporary ? 'Временный' : 'Постоянный'}
-          </Badge>
-        );
-      }
+      title: 'Статус пароля',
+      render: (teacher) => (
+        <Badge variant={teacher.passwordTemporary ? "warning" : "success"}>
+          {teacher.passwordTemporary ? 'Временный' : 'Постоянный'}
+        </Badge>
+      )
     },
     {
       key: 'actions',
       title: 'Действия',
-      render: (teacher, index) => {
-        console.log('RENDER ACTIONS - teacher:', teacher, 'index:', index);
-        if (!teacher) {
-          console.log('RENDER ACTIONS - teacher is null/undefined');
-          return <span className="text-muted">Нет данных</span>;
-        }
-        return (
-          <div className="teacher-actions">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => handleViewDetails(teacher)}
-            >
-              Подробнее
-            </Button>
-          </div>
-        );
-      }
+      render: (teacher) => (
+        <div className="teacher-actions">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => handleViewDetails(teacher)}
+          >
+            Подробнее
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => handleEditTeacher(teacher)}
+          >
+            Редактировать
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => handleDeleteTeacher(teacher)}
+            style={{ color: '#dc3545', borderColor: '#dc3545' }}
+          >
+            Удалить
+          </Button>
+        </div>
+      )
     }
   ];
-
-  if (!isAuthenticated) {
-    return (
-      <div className="teachers">
-        <Navigation />
-        <div className="teachers-container">
-          <div className="loading-container">
-            <p>Необходимо авторизоваться для просмотра преподавателей</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   if (loading) {
     return (
@@ -429,17 +460,286 @@ const Teachers = () => {
       <Navigation />
       
       <div className="teachers-container">
-       
-        
         <div className="teachers-header">
           <div className="teachers-title">
             <h1>Управление преподавателями</h1>
             <p>Добавление, редактирование и просмотр информации о преподавателях</p>
           </div>
-          <Button onClick={handleCreateTeacher} >
-             Добавить преподавателя 
+          <Button onClick={handleCreateTeacher}>
+            Добавить преподавателя
           </Button>
         </div>
+
+        {/* Форма добавления преподавателя */}
+        {showCreateForm && (
+          <Card className="create-teacher-card">
+            <div className="create-teacher-header">
+              <h2>Добавление нового преподавателя</h2>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleCloseCreateForm}
+              >
+                ✕
+              </Button>
+            </div>
+            
+            <div className="create-teacher-form">
+              <div className="form-row">
+                
+                
+                <div className="form-group">
+                  <label>
+                    Фамилия 
+                    <span className="required">*</span>
+                  </label>
+                  <Input 
+                    type="text" 
+                    placeholder="Введите фамилию"
+                    value={newTeacher.surname}
+                    onChange={(e) => handleInputChange('surname', e.target.value)}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>
+                    Имя 
+                    <span className="required">*</span>
+                  </label>
+                  <Input 
+                    type="text" 
+                    placeholder="Введите имя"
+                    value={newTeacher.name}
+                    onChange={(e) => handleInputChange('name', e.target.value)}
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label>
+                    Отчество 
+                    <span className="required">*</span>
+                  </label>
+                  <Input 
+                    type="text" 
+                    placeholder="Введите отчество"
+                    value={newTeacher.lastname}
+                    onChange={(e) => handleInputChange('lastname', e.target.value)}
+                  />
+                </div>
+              </div>
+              
+              <div className="form-row">
+                <div className="form-group">
+                  <label>
+                    Email 
+                    <span className="required">*</span>
+                  </label>
+                  <Input 
+                    type="email" 
+                    placeholder="Введите email"
+                    value={newTeacher.email}
+                    onChange={(e) => handleInputChange('email', e.target.value)}
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label>Телефон</label>
+                  <Input 
+                    type="tel" 
+                    placeholder="Введите телефон"
+                    value={newTeacher.phone}
+                    onChange={(e) => handleInputChange('phone', e.target.value)}
+                  />
+                </div>
+              </div>
+              
+              <div className="form-row">
+                <div className="form-group">
+                  <label>
+                    Предмет 
+                    <span className="required">*</span>
+                  </label>
+                  <select
+                    value={newTeacher.subjectId}
+                    onChange={(e) => handleInputChange('subjectId', e.target.value)}
+                    className="subject-select"
+                  >
+                    <option value="">Выберите предмет</option>
+                    {Array.isArray(subjects) && subjects.map(subject => (
+                      <option key={subject.subject_id ?? subject.id} value={subject.subject_id ?? subject.id}>
+                        {subject?.subject_name || subject?.name || `ID: ${subject?.subject_id ?? subject?.id}`}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              
+              <div className="form-actions">
+                <Button 
+                  variant="outline" 
+                  onClick={handleCloseCreateForm}
+                >
+                  Отмена
+                </Button>
+                <Button onClick={handleCreateTeacherSubmit}>
+                  Добавить преподавателя
+                </Button>
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {/* Форма деталей преподавателя */}
+        {showDetailsForm && selectedTeacher && (
+          <Card className="teacher-details-card">
+            <div className="teacher-details-header">
+              <h2>Информация о преподавателе</h2>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleCloseDetailsForm}
+              >
+                ✕
+              </Button>
+            </div>
+            
+            <div className="teacher-details-content">
+              <div className="teacher-avatar">
+                <div className="avatar-circle">
+                  {selectedTeacher.name?.[0]}{selectedTeacher.surName?.[0]}
+                </div>
+              </div>
+              
+              <div className="details-grid">
+                <div className="detail-item">
+                  <strong>ФИО:</strong> {selectedTeacher.name} {selectedTeacher.surName} {selectedTeacher.lastName}
+                </div>
+                <div className="detail-item">
+                  <strong>Email:</strong> {selectedTeacher.email || 'Не указан'}
+                </div>
+                <div className="detail-item">
+                  <strong>Предметы:</strong> {getTeacherSubjects(selectedTeacher)}
+                </div>
+                <div className="detail-item">
+                  <strong>Роли:</strong> {getTeacherAuthorities(selectedTeacher)}
+                </div>
+                <div className="detail-item">
+                  <strong>Статус пароля:</strong> 
+                  <Badge variant={selectedTeacher.passwordTemporary ? "warning" : "success"}>
+                    {selectedTeacher.passwordTemporary ? 'Временный' : 'Постоянный'}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {showEditForm && selectedTeacher && (
+          <Card className="create-teacher-card">
+            <div className="create-teacher-header">
+              <h2>Редактирование преподавателя</h2>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleCloseEditForm}
+              >
+                ✕
+              </Button>
+            </div>
+            
+            <div className="create-teacher-form">
+              <div className="form-row">
+               
+                
+                <div className="form-group">
+                  <label>
+                    Фамилия 
+                    <span className="required">*</span>
+                  </label>
+                  <Input 
+                    type="text" 
+                    placeholder="Введите фамилию"
+                    value={editTeacher.surname}
+                    onChange={(e) => handleEditInputChange('surname', e.target.value)}
+                  />
+                </div>
+
+                
+                
+                <div className="form-group">
+                  <label>
+                    Отчество 
+                    <span className="required">*</span>
+                  </label>
+                  <Input 
+                    type="text" 
+                    placeholder="Введите отчество"
+                    value={editTeacher.lastname}
+                    onChange={(e) => handleEditInputChange('lastname', e.target.value)}
+                  />
+                </div>
+              </div>
+              
+              <div className="form-row">
+                <div className="form-group">
+                  <label>
+                    Email 
+                    <span className="required">*</span>
+                  </label>
+                  <Input 
+                    type="email" 
+                    placeholder="Введите email"
+                    value={editTeacher.email}
+                    onChange={(e) => handleEditInputChange('email', e.target.value)}
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label>Телефон</label>
+                  <Input 
+                    type="tel" 
+                    placeholder="Введите телефон"
+                    value={editTeacher.phone}
+                    onChange={(e) => handleEditInputChange('phone', e.target.value)}
+                  />
+                </div>
+              </div>
+              
+              <div className="form-row">
+                <div className="form-group">
+                  <label>
+                    Предмет 
+                    <span className="required">*</span>
+                  </label>
+                  <select
+                    value={editTeacher.subjectId}
+                    onChange={(e) => handleEditInputChange('subjectId', e.target.value)}
+                    className="subject-select"
+                  >
+                    <option value="">Выберите предмет</option>
+                    {Array.isArray(subjects) && subjects.map(subject => (
+                      <option key={subject.subject_id ?? subject.id} value={subject.subject_id ?? subject.id}>
+                        {subject?.subject_name || subject?.name || `ID: ${subject?.subject_id ?? subject?.id}`}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              
+              <div className="form-actions">
+                <Button 
+                  variant="outline" 
+                  onClick={handleCloseEditForm}
+                >
+                  Отмена
+                </Button>
+                <Button onClick={handleEditTeacherSubmit}>
+                  Сохранить изменения
+                </Button>
+              </div>
+            </div>
+          </Card>
+        )}
 
         <div className="teachers-content">
           <Card className="teachers-card">
@@ -447,7 +747,7 @@ const Teachers = () => {
               <div className="search-container">
                 <Input
                   type="text"
-                  placeholder="Поиск по имени, email или предмету..."
+                  placeholder="Поиск по ФИО или email..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="search-input"
@@ -456,26 +756,20 @@ const Teachers = () => {
               
               <div className="teachers-stats">
                 <div className="stat-item">
-                  <span className="stat-number">{teachers.length}</span>
+                  <span className="stat-number">{Array.isArray(teachers) ? teachers.length : 0}</span>
                   <span className="stat-label">Всего преподавателей</span>
                 </div>
                 <div className="stat-item">
                   <span className="stat-number">
-                    {teachers.filter(t => t.lessonsCount > 0).length}
+                    {Array.isArray(teachers) ? teachers.filter(t => t.subjects && t.subjects.length > 0).length : 0}
                   </span>
-                  <span className="stat-label">Активных</span>
+                  <span className="stat-label">С предметами</span>
                 </div>
                 <div className="stat-item">
                   <span className="stat-number">
-                    {teachers.reduce((acc, t) => acc + t.lessonsCount, 0)}
+                    {Array.isArray(teachers) ? teachers.filter(t => !t.passwordTemporary).length : 0}
                   </span>
-                  <span className="stat-label">Всего уроков</span>
-                </div>
-                <div className="stat-item">
-                  <span className="stat-number">
-                    {teachers.reduce((acc, t) => acc + t.studentsCount, 0)}
-                  </span>
-                  <span className="stat-label">Всего студентов</span>
+                  <span className="stat-label">С постоянным паролем</span>
                 </div>
               </div>
             </div>
@@ -488,176 +782,6 @@ const Teachers = () => {
           </Card>
         </div>
       </div>
-      {/* Модальное окно создания преподавателя */}
-      <Modal
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        title="Добавление нового преподавателя"
-        size="lg"
-      >
-        <form onSubmit={handleSubmitTeacher} className="create-teacher-form">
-          <div className="form-group">
-            <label>
-              Имя 
-              <span className="required">*</span>
-            </label>
-            <Input 
-              type="text" 
-              name="name"
-              value={formData.name}
-              onChange={handleInputChange}
-              placeholder="Введите имя (только буквы)" 
-              pattern="[а-яёА-ЯЁa-zA-Z\s-]+"
-              title="Имя может содержать только буквы, пробелы и дефисы"
-              required
-              size="md"
-            />
-          </div>
-          <div className="form-group">
-            <label>
-              Фамилия 
-              <span className="required">*</span>
-            </label>
-            <Input 
-              type="text" 
-              name="surname"
-              value={formData.surname}
-              onChange={handleInputChange}
-              placeholder="Введите фамилию (только буквы)" 
-              pattern="[а-яёА-ЯЁa-zA-Z\s-]+"
-              title="Фамилия может содержать только буквы, пробелы и дефисы"
-              required
-              size="md"
-            />
-          </div>
-          <div className="form-group">
-            <label>Отчество</label>
-            <Input 
-              type="text" 
-              name="lastname"
-              value={formData.lastname}
-              onChange={handleInputChange}
-              placeholder="Введите отчество (только буквы)" 
-              pattern="[а-яёА-ЯЁa-zA-Z\s-]+"
-              title="Отчество может содержать только буквы, пробелы и дефисы"
-              size="md"
-            />
-          </div>
-          <div className="form-group">
-            <label>
-              Email 
-              <span className="required">*</span>
-            </label>
-            <Input 
-              type="email" 
-              name="email"
-              value={formData.email}
-              onChange={handleInputChange}
-              placeholder="example@domain.com" 
-              required
-              size="md"
-            />
-          </div>
-          
-          <div className="modal-actions">
-            <Button 
-              type="button"
-              variant="outline" 
-              onClick={() => setShowCreateModal(false)}
-              disabled={submitting}
-            >
-              Отмена
-            </Button>
-            <Button 
-              type="submit"
-              disabled={submitting}
-            >
-              {submitting ? 'Создание...' : 'Создать'}
-            </Button>
-          </div>
-        </form>
-      </Modal>
-
-      {/* Модальное окно деталей преподавателя */}
-      <Modal
-        isOpen={showDetailsModal}
-        onClose={() => setShowDetailsModal(false)}
-        title="Информация о преподавателе"
-      >
-        {selectedTeacher && (
-          <div className="teacher-details">
-            <div className="teacher-avatar">
-              <div className="avatar-circle">
-                {selectedTeacher.name?.[0] || 'П'}
-              </div>
-            </div>
-            
-            <div className="detail-row">
-              <strong>ID:</strong> {selectedTeacher.id}
-            </div>
-            <div className="detail-row">
-              <strong>ФИО:</strong> {[selectedTeacher.name, selectedTeacher.surname, selectedTeacher.lastname].filter(Boolean).join(' ') || 'Не указано'}
-            </div>
-            <div className="detail-row">
-              <strong>Email:</strong> {selectedTeacher.email || 'Не указан'}
-            </div>
-            <div className="detail-row">
-              <strong>Телефон:</strong> {selectedTeacher.phone || 'Не указан'}
-            </div>
-            <div className="detail-row">
-              <strong>Предметы:</strong>
-              <div className="subjects-detail">
-                {selectedTeacher.subjects?.map((subject, index) => (
-                  <Badge key={index} variant="outline" className="subject-badge">
-                    {subject}
-                  </Badge>
-                )) || 'Не указаны'}
-              </div>
-            </div>
-            <div className="detail-row">
-              <strong>Количество уроков:</strong> 
-              <Badge variant="info">{selectedTeacher.lessonsCount}</Badge>
-            </div>
-            <div className="detail-row">
-              <strong>Количество студентов:</strong> 
-              <Badge variant="success">{selectedTeacher.studentsCount}</Badge>
-            </div>
-            <div className="detail-row">
-              <strong>Последний урок:</strong> 
-              {selectedTeacher.lastLesson 
-                ? new Date(selectedTeacher.lastLesson).toLocaleDateString('ru-RU')
-                : 'Нет'
-              }
-            </div>
-            <div className="detail-row">
-              <strong>Роли:</strong> 
-              {selectedTeacher.authorities?.length > 0 ? (
-                <div className="authorities-list">
-                  {selectedTeacher.authorities.map((authority, index) => (
-                    <Badge key={index} variant="secondary" size="sm">
-                      {authority}
-                    </Badge>
-                  ))}
-                </div>
-              ) : (
-                <span className="text-muted">Не указаны</span>
-              )}
-            </div>
-            <div className="detail-row">
-              <strong>Пароль:</strong> 
-              <Badge variant={selectedTeacher.passwordTemporary ? 'warning' : 'success'}>
-                {selectedTeacher.passwordTemporary ? 'Временный' : 'Постоянный'}
-              </Badge>
-            </div>
-
-            <div className="modal-actions">
-              <Button variant="outline" onClick={() => setShowDetailsModal(false)}>
-                Закрыть
-              </Button>
-            </div>
-          </div>
-        )}
-      </Modal>
       
       {/* Toast контейнер */}
       <ToastContainer>
