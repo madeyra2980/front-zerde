@@ -1,8 +1,6 @@
 /* Card Base Styles */
 .card {
-  background: var(--gradient-card) !important;
   border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-md);
   border: 1px solid var(--border-light);
   overflow: hidden;
   transition: all var(--transition-normal);
@@ -23,7 +21,6 @@
 }
 
 .card--clickable:focus {
-  outline: 2px solid #468b8a;
   outline-offset: 2px;
 }
 
@@ -80,44 +77,7 @@
   border-radius: 1rem;
 }
 
-/* Card Hover Effect */
-.card--hover:hover {
-  transform: translateY(-4px) scale(1.02);
-  box-shadow: var(--shadow-xl);
-  border-color: var(--primary);
-}
 
-.card--elevated.card--hover:hover {
-  transform: translateY(-6px) scale(1.03);
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-}
-
-.card--outlined.card--hover:hover {
-  border-color: var(--primary-hover);
-  box-shadow: 0 8px 25px -5px rgba(59, 130, 246, 0.2), 0 4px 10px -2px rgba(59, 130, 246, 0.1);
-  transform: translateY(-2px);
-}
-
-.card--filled.card--hover:hover {
-  background: var(--gray-100);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
-}
-
-.card--gradient.card--hover:hover,
-.card--gradient-secondary.card--hover:hover {
-  transform: translateY(-4px) scale(1.02);
-  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.3);
-}
-
-/* Card Clickable Hover */
-.card--clickable:hover {
-  transform: translateY(-1px);
-}
-
-.card--clickable:active {
-  transform: translateY(0);
-}
 
 /* Card Header */
 .card-header {
@@ -188,10 +148,6 @@
   height: 100%;
   object-fit: cover;
   transition: transform 0.3s ease-in-out;
-}
-
-.card--hover .card-image img {
-  transform: scale(1.05);
 }
 
 /* Card Actions */
@@ -324,15 +280,7 @@
     color: var(--text-secondary);
   }
   
-  .card--outlined.card--hover:hover {
-    border-color: var(--primary-hover);
-    box-shadow: 0 8px 25px -5px rgba(96, 165, 250, 0.2), 0 4px 10px -2px rgba(96, 165, 250, 0.1);
-  }
-  
-  .card--filled.card--hover:hover {
-    background: var(--gray-100);
-  }
-  
+
   .card--loading::before {
     background: linear-gradient(
       90deg,
@@ -422,13 +370,7 @@
     transition: none;
   }
   
-  .card--hover:hover {
-    transform: none;
-  }
   
-  .card--clickable:hover {
-    transform: none;
-  }
   
   .card--loading::before {
     animation: none;

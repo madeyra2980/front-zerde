@@ -160,10 +160,6 @@
   opacity: 0.7;
 }
 
-.badge__remove:hover {
-  opacity: 1;
-  background: rgba(0, 0, 0, 0.1);
-}
 
 .badge__remove:focus {
   outline: 2px solid currentColor;
@@ -235,11 +231,6 @@
   }
 }
 
-/* Badge Hover Effects */
-.badge--removable:hover {
-  transform: scale(1.05);
-  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.1);
-}
 
 /* Badge Animations */
 .badge {
@@ -265,9 +256,6 @@
     border-color: #4b5563;
   }
   
-  .badge__remove:hover {
-    background: rgba(255, 255, 255, 0.1);
-  }
 }
 
 /* High Contrast Mode */
@@ -285,7 +273,7 @@
 /* Reduced Motion */
 @media (prefers-reduced-motion: reduce) {
   .badge,
-  .badge--removable:hover {
+  .badge--removable {
     transition: none;
     animation: none;
   }

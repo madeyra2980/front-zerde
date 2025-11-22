@@ -230,9 +230,6 @@
   z-index: 2;
 }
 
-.input-password-toggle:hover {
-  color: var(--text-primary);
-}
 
 .input-password-icon {
   width: 1rem;
@@ -353,9 +350,6 @@
     color: var(--text-tertiary);
   }
   
-  .input-password-toggle:hover {
-    color: var(--text-primary);
-  }
   
   .input-helper-text {
     color: var(--text-secondary);

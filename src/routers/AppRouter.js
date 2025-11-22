@@ -14,20 +14,16 @@ import Profile from '../components/Profile';
 import Students from '../components/Students';
 import Teachers from '../components/Teachers';
 import Settings from '../components/Settings';
+
 import { Loading } from '../components/ui/Loading';
+import './AppRouter.css';
 
 const AppRouter = () => {
   const { loading } = useAuth();
 
   if (loading) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-      }}>
+      <div className="app-router-loading">
         <Loading />
       </div>
     );
@@ -54,7 +50,7 @@ const AppRouter = () => {
         } 
       />
 
-      {/* Защищенные маршруты - требуют авторизации */}
+      {/* Protected routes - require authentication */}
       <Route 
         path="/dashboard" 
         element={
@@ -72,7 +68,6 @@ const AppRouter = () => {
         } 
       />
 
-
       <Route 
         path="/students" 
         element={
@@ -81,6 +76,7 @@ const AppRouter = () => {
           </ProtectedRoute>
         } 
       />
+
       <Route 
         path="/teachers" 
         element={
@@ -89,6 +85,7 @@ const AppRouter = () => {
           </ProtectedRoute>
         } 
       />
+      
       <Route 
         path="/settings" 
         element={
@@ -112,7 +109,7 @@ const AppRouter = () => {
         element={<Navigate to="/dashboard" replace />} 
       />
 
-      {/* 404 страница */}
+      {/* 404 page */}
       <Route 
         path="*" 
         element={<div>Страница не найдена</div>} 

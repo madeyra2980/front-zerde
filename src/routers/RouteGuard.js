@@ -14,27 +14,21 @@ const RouteGuard = ({
 }) => {
   const { isAuthenticated, user, loading } = useAuth();
 
-  // Показываем загрузку во время проверки
+  // Show loading during permission check
   if (loading) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-      }}>
+      <div className="route-guard-loading">
         <div>Проверка прав доступа...</div>
       </div>
     );
   }
 
-  // Если пользователь не авторизован
+  // Redirect to signin if user is not authenticated
   if (!isAuthenticated) {
     return <Navigate to="/signin" replace />;
   }
 
-  // Проверка роли
+  // Check required role
   if (requiredRole && user?.role !== requiredRole) {
     if (fallback) {
       return fallback;
@@ -62,7 +56,7 @@ const RouteGuard = ({
     return <Navigate to={redirectTo} replace />;
   }
 
-  // Проверка разрешений
+  // Check required permissions
   if (requiredPermissions.length > 0) {
     const userPermissions = user?.permissions || [];
     const hasAllPermissions = requiredPermissions.every(permission => 
@@ -101,7 +95,7 @@ const RouteGuard = ({
     }
   }
 
-  // Если все проверки пройдены, показываем дочерние компоненты
+  // Render children if all checks pass
   return children;
 };
 

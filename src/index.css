@@ -37,10 +37,6 @@ code {
   transition: all var(--transition-normal);
 }
 
-.card:hover {
-  box-shadow: var(--shadow-lg);
-  transform: translateY(-2px);
-}
 
 .button {
   background: var(--gradient-button);
@@ -54,11 +50,6 @@ code {
   box-shadow: var(--shadow-sm);
 }
 
-.button:hover {
-  background: var(--gradient-button-hover);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
-}
 
 .button:active {
   transform: translateY(0);

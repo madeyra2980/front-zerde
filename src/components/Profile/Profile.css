@@ -31,11 +31,6 @@
   transition: all 0.3s ease;
 }
 
-.logout-button:hover {
-  background: rgba(255, 255, 255, 0.3);
-  border-color: rgba(255, 255, 255, 0.5);
-  transform: translateY(-2px);
-}
 
 .profile-content {
   max-width: 800px;

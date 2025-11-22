@@ -26,6 +26,10 @@ export const Input = memo(forwardRef(({
   maxLength,
   minLength,
   pattern,
+  min,
+  max,
+  step,
+  ...rest
 }, ref) => {
   const [isFocused, setIsFocused] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -100,7 +104,11 @@ export const Input = memo(forwardRef(({
           maxLength={maxLength}
           minLength={minLength}
           pattern={pattern}
+          min={min}
+          max={max}
+          step={step}
           className={inputClasses}
+          {...rest}
         />
         
         {type === 'password' && (

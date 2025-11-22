@@ -1,6 +1,6 @@
 .dashboard {
   min-height: 100vh;
-  background: var(--gradient-background);
+  /* background: var(--gradient-background); */
 }
 
 .dashboard-container {
@@ -57,10 +57,6 @@
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-}
 
 .stat-icon {
   font-size: 2.5rem;
@@ -162,10 +158,6 @@
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.chart-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-}
 
 .chart-card.full-width {
   grid-column: 1 / -1;
@@ -202,10 +194,6 @@
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.action-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-}
 
 .action-icon {
   width: 60px;
@@ -252,9 +240,6 @@
   border-bottom: none;
 }
 
-.recent-lesson:hover {
-  background: #f8f9fa;
-}
 
 .lesson-time {
   font-weight: 600;
